@@ -88,4 +88,29 @@ public class Product extends AbstractEntity<ProductId> {
         this.dateOfExpiry = null;
         this.checkInvariants();
     }
+    public static class Builder {
+        private Product product;
+
+        public Builder(Name name, Money price, Quantity quantity) {
+            this.product = new Product(name, price, quantity);
+        }
+
+        public Builder withDateOfProduction(ZonedDateTime dateOfProduction) {
+            this.product.dateOfProduction = dateOfProduction;
+            return this;
+        }
+
+        public Builder withDateOfExpiry(ZonedDateTime dateOfExpiry) {
+            this.product.dateOfExpiry = dateOfExpiry;
+            return this;
+        }
+
+        public Product build() {
+            validState(product != null, "product must not be null");
+            product.checkInvariants();
+            Product result = product;
+            product = null;
+            return result;
+        }
+    }
 }
