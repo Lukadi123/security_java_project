@@ -3,6 +3,9 @@ package mk.ukim.finki.wp.commonmodel.teachingallocation.schedule;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
+/**
+ * Stub entity for Course.
+ */
 @Entity
 public class Course {
     @Id

@@ -4,18 +4,18 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
 /**
- * Stub entity for Subject.
+ * Stub entity for Professor.
  */
 @Entity
-public class Subject {
+public class Professor {
     @Id
-    private String id; // e.g., "MATH101"
+    private String id;
 
-    public Subject(String id) {
+    public Professor(String id) {
         this.id = id;
     }
 
-    protected Subject() {
+    protected Professor() {
     }
 
     public String getId() {
