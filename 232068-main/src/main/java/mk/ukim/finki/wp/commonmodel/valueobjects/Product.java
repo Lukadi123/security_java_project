@@ -28,6 +28,7 @@ public class Product extends AbstractEntity<ProductId> {
     private Quantity quantity;
 
     private ZonedDateTime dateOfProduction;
+    private ZonedDateTime dateOfExpiry;
 
     public Product(Name name, Money price, Quantity quantity) {
         super(new ProductId());
@@ -48,5 +49,20 @@ public class Product extends AbstractEntity<ProductId> {
     }
     public void updateProductName(Name name) {
         this.name = notNull(name, "name must not be null");
+    }
+    public Product withDateOfProduction(ZonedDateTime dateOfProduction) {
+        notNull(dateOfProduction, "dateOfProduction must not be null");
+        isTrue(dateOfProduction.isBefore(ZonedDateTime.now()),
+                "dateOfProduction must be in the past");
+        this.dateOfProduction = dateOfProduction;
+        return this;
+    }
+
+    public Product withDateOfExpiry(ZonedDateTime dateOfExpiry) {
+        notNull(dateOfExpiry, "dateOfExpiry must not be null");
+        isTrue(dateOfExpiry.isAfter(ZonedDateTime.now()),
+                "dateOfExpiry must be in the future");
+        this.dateOfExpiry = dateOfExpiry;
+        return this;
     }
 }
