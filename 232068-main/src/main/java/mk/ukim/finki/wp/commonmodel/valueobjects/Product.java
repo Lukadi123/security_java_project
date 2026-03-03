@@ -6,6 +6,7 @@ import mk.ukim.finki.wp.commonmodel.base.AbstractEntity;
 import mk.ukim.finki.wp.commonmodel.valueobjects.*;
 import java.time.ZonedDateTime;
 import static org.apache.commons.lang3.Validate.*;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @Getter
 @Entity
@@ -38,9 +39,14 @@ public class Product extends AbstractEntity<ProductId> {
     protected Product() {}
 
     public void updateProductDateOfProduction(ZonedDateTime dateOfProduction) {
-        isTrue(dateOfProduction == null ||
-                        dateOfProduction.isBefore(ZonedDateTime.now()),
-                "Date of production must not be in the future");
+        notNull(dateOfProduction, "dateOfProduction must not be null");
+        isTrue(dateOfProduction.isBefore(ZonedDateTime.now()), "dateOfProduction must be in the past");
         this.dateOfProduction = dateOfProduction;
+    }
+    public void clearDateOfProduction() {
+        this.dateOfProduction = null;
+    }
+    public void updateProductName(Name name) {
+        this.name = notNull(name, "name must not be null");
     }
 }
