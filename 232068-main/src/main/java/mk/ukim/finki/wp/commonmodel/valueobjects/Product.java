@@ -5,6 +5,10 @@ import lombok.Getter;
 import mk.ukim.finki.wp.commonmodel.base.AbstractEntity;
 import mk.ukim.finki.wp.commonmodel.valueobjects.*;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import static org.apache.commons.lang3.Validate.*;
 
 @Getter
@@ -28,12 +32,15 @@ public class Product extends AbstractEntity<ProductId> {
 
     private ZonedDateTime dateOfProduction;
     private ZonedDateTime dateOfExpiry;
+    @ElementCollection
+    private List<Tag> tags;
 
     public Product(Name name, Money price, Quantity quantity) {
         super(new ProductId());
         this.name = notNull(name, "name must not be null");
         this.price = notNull(price, "price must not be null");
         this.quantity = notNull(quantity, "quantity must not be null");
+        this.tags = new ArrayList<>();
     }
 
     protected Product() {}
@@ -85,6 +92,13 @@ public class Product extends AbstractEntity<ProductId> {
     public void clearDateOfExpiry() {
         this.dateOfExpiry = null;
         this.checkInvariants();
+    }
+    public List<Tag> tags() {
+        return Collections.unmodifiableList(tags);
+    }
+
+    public List<Tag> getTags() {
+        return tags;
     }
     public static class Builder {
         private Product product;
