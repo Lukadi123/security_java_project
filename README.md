@@ -1,93 +1,284 @@
-# 232068
+# DDD Refactoring Project - StudentSubjectEnrollment
 
+## 🎯 Project Overview
 
+This project demonstrates **refactoring a Spring Boot entity using Domain-Driven Design (DDD) principles** and the **Domain Primitives pattern** from the book "Secure by Design".
 
-## Getting started
+**Original class:** Primitive obsession (String, Short, Long, Boolean)
+**Refactored class:** Type-safe domain model with validated value objects
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+---
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## 📁 Project Structure
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.finki.ukim.mk/sdb/sdb-2026/232068.git
-git branch -M main
-git push -uf origin main
+ddd-refactoring-project/
+└── src/main/java/mk/ukim/finki/wp/commonmodel/
+    │
+    ├── 📦 base/                           (Step 1: DDD Base Classes)
+    │   ├── DomainObject.java              ← Marker interface
+    │   ├── ValueObject.java               ← Marker for value objects
+    │   ├── DomainObjectId.java            ← UUID-based ID base class
+    │   └── AbstractEntity.java            ← Entity base class
+    │
+    ├── 💎 valueobjects/                   (Step 2: Domain Primitives)
+    │   ├── StudentSubjectEnrollmentId.java   ← UUID ID (non-enumerable)
+    │   ├── InvalidNote.java                  ← 10-4000 chars, validated
+    │   ├── NumberOfEnrollments.java          ← 1-10 range, domain operations
+    │   ├── GroupName.java                    ← 1-50 chars, SQL-safe
+    │   └── GroupId.java                      ← UUID, type-safe
+    │
+    └── 🏛️ enrollments/                    (Step 3: Refactored Entity)
+        └── StudentSubjectEnrollment.java     ← DDD entity with domain primitives
 ```
 
-## Integrate with your tools
+---
 
-- [ ] [Set up project integrations](https://gitlab.finki.ukim.mk/sdb/sdb-2026/232068/-/settings/integrations)
+## 🔄 Refactoring Steps Applied
 
-## Collaborate with your team
+### Step 1: Create DDD Base Classes ✅
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+**Files created:**
+- `DomainObject.java` - Marker interface for all domain objects
+- `ValueObject.java` - Marker for immutable value objects
+- `DomainObjectId.java` - UUID-based ID with format validation
+- `AbstractEntity.java` - Entity base with identity-based equality
 
-## Test and Deploy
+**Key concepts:**
+- **Entities** have identity (same ID = same object)
+- **Value Objects** have no identity (same attributes = same object)
+- **Immutability** - Value objects never change, return new instances
 
-Use the built-in continuous integration in GitLab.
+---
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+### Step 2: Create Domain Primitives ✅
 
-***
+**Files created:**
 
-# Editing this README
+#### `StudentSubjectEnrollmentId.java`
+```java
+// BEFORE: String id = "anything"
+// AFTER:  StudentSubjectEnrollmentId id = new StudentSubjectEnrollmentId()
+```
+- UUID-based (non-enumerable, secure)
+- Format validated (must match UUID pattern)
+- Type-safe (can't mix with StudentId or GroupId)
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+#### `InvalidNote.java`
+```java
+// BEFORE: String invalidNote (0-4000 chars, no validation)
+// AFTER:  InvalidNote note = new InvalidNote("Detailed reason...")
+```
+- 10-4000 characters (meaningful notes only)
+- Character whitelist (prevents SQL injection)
+- Null checks + length checks + regex pattern
 
-## Suggestions for a good README
+#### `NumberOfEnrollments.java`
+```java
+// BEFORE: Short numEnrollments (could be -999 or 32,767)
+// AFTER:  NumberOfEnrollments num = new NumberOfEnrollments(5)
+```
+- 1-10 range (business rule: max 10 re-enrollment attempts)
+- Domain operations: `increment()`, `canEnrollAgain()`
+- Immutable (returns new instance on operations)
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+#### `GroupName.java`
+```java
+// BEFORE: String groupName = "'; DROP TABLE--"
+// AFTER:  GroupName name = new GroupName("Group A")
+```
+- 1-50 characters
+- Alphanumeric + spaces + limited punctuation (. - /)
+- Prevents SQL injection via character whitelist
 
-## Name
-Choose a self-explaining name for your project.
+#### `GroupId.java`
+```java
+// BEFORE: Long groupId = 1L (sequential, enumerable)
+// AFTER:  GroupId id = GroupId.randomGroupId()
+```
+- UUID-based (non-enumerable)
+- Format validated
+- Type-safe
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+---
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+### Step 3: Refactor Entity ✅
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+**File refactored:** `StudentSubjectEnrollment.java`
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+#### Changes Made:
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+| Aspect | Before | After |
+|---|---|---|
+| **Base class** | No base class | `extends AbstractEntity<StudentSubjectEnrollmentId>` |
+| **ID type** | `String id` | `StudentSubjectEnrollmentId` (UUID) |
+| **Setters** | `@Setter` (unrestricted) | ❌ Removed - domain methods only |
+| **Constructor** | `@NoArgsConstructor` | ❌ Removed - forces valid construction |
+| **Validation** | None | Fail-fast at construction |
+| **Primitives** | `String`, `Short`, `Long`, `Boolean` | Domain primitives (validated) |
+| **Operations** | Generic setters | Domain methods (`markAsInvalid`, `recordReEnrollment`, etc.) |
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+#### Domain Methods Added:
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+```java
+// Instead of generic setters, expressive domain operations:
+enrollment.markAsInvalid(new InvalidNote("Missing prerequisite Math101"));
+enrollment.markAsValid();
+enrollment.recordReEnrollment();
+enrollment.assignToGroup(new GroupName("Group A"), GroupId.randomGroupId());
+enrollment.removeFromGroup();
+boolean canRetry = enrollment.canReEnroll();
+```
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+---
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+## 🛡️ Security Improvements
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+### 1. **Prevents SQL Injection**
+- ✅ Character whitelisting in `GroupName` and `InvalidNote`
+- ✅ Regex validation rejects malicious characters
+- ✅ `"'; DROP TABLE--"` cannot be constructed
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+### 2. **Prevents Enumeration Attacks**
+- ✅ UUID-based IDs (2^122 possibilities)
+- ✅ `/api/enrollments/1, /2, /3...` → Now unpredictable UUIDs
+- ✅ Attacker cannot enumerate all enrollments
 
-## License
-For open source projects, say how it is licensed.
+### 3. **Prevents Invalid Business Data**
+- ✅ Negative enrollments impossible
+- ✅ 999 enrollments impossible
+- ✅ Empty notes impossible
+- ✅ Fail-fast with clear error messages
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+### 4. **Type Safety**
+- ✅ Cannot pass `GroupId` where `StudentSubjectEnrollmentId` expected
+- ✅ Compiler catches parameter order mistakes
+- ✅ No ambiguous parameter lists
+
+---
+
+## 💡 Key Principles Applied
+
+### 1. **"If it's not valid, it can't exist"**
+```java
+// ❌ BEFORE: Invalid data accepted
+enrollment.setNumEnrollments((short) -999);  // compiles!
+
+// ✅ AFTER: Invalid data rejected at construction
+NumberOfEnrollments num = new NumberOfEnrollments(-999);  // throws IllegalArgumentException
+```
+
+### 2. **Fail Fast**
+```java
+// Validation happens at the boundary (construction time)
+// Not scattered across service/controller layers
+// If it compiles and constructs, it's valid
+```
+
+### 3. **Validation Order (Cheap → Expensive)**
+```java
+1. notNull(value)                    // cheapest
+2. inclusiveBetween(min, max, value) // cheap
+3. matchesPattern(value, regex)      // expensive (last)
+```
+
+### 4. **Immutability**
+```java
+// Value objects are immutable - operations return new instances
+NumberOfEnrollments five = new NumberOfEnrollments(5);
+NumberOfEnrollments six = five.increment();  // new instance
+// 'five' is unchanged!
+```
+
+### 5. **Domain Methods > Setters**
+```java
+// ❌ Meaningless
+enrollment.setValid(false);
+enrollment.setInvalidNote("reason");
+
+// ✅ Expressive
+enrollment.markAsInvalid(new InvalidNote("Missing Math101 prerequisite"));
+```
+
+---
+
+## 📚 Files to Review
+
+1. **[DDD_REFACTORING_NOTES.md](../DDD_REFACTORING_NOTES.md)** - Detailed step-by-step notes
+2. **[BEFORE_AFTER_COMPARISON.md](../BEFORE_AFTER_COMPARISON.md)** - Side-by-side comparison
+3. **[StudentSubjectEnrollment.java](src/main/java/mk/ukim/finki/wp/commonmodel/enrollments/StudentSubjectEnrollment.java)** - Refactored entity
+
+---
+
+## 🧪 Try It Yourself
+
+### Test Invalid Data (Should Throw):
+```java
+// All of these throw IllegalArgumentException or NullPointerException:
+new InvalidNote("x");                           // too short (min 10 chars)
+new InvalidNote("'; DROP TABLE students;--");   // invalid characters
+new NumberOfEnrollments(-5);                    // negative
+new NumberOfEnrollments(999);                   // too large (max 10)
+new GroupName("");                              // empty
+new GroupName("A".repeat(51));                  // too long (max 50)
+new GroupId("not-a-uuid");                      // invalid format
+```
+
+### Test Valid Data (Should Work):
+```java
+var id = new StudentSubjectEnrollmentId();  // generates UUID
+var note = new InvalidNote("Student has not completed Math101 prerequisite");
+var num = new NumberOfEnrollments(5);
+var groupName = new GroupName("Group A");
+var groupId = GroupId.randomGroupId();  // generates UUID
+
+var enrollment = new StudentSubjectEnrollment(semester, student, subject);
+enrollment.markAsInvalid(note);
+enrollment.assignToGroup(groupName, groupId);
+```
+
+---
+
+## 🎓 Learning Resources
+
+- **Book:** "Secure by Design" - Dan Bergh Johnsson, Daniel Deogun, Daniel Sawano
+- **Chapter 5:** Domain Primitives
+- **Chapter 12:** Validation (Table 12.1 - Refactoring approaches)
+- **DDD:** "Domain-Driven Design" - Eric Evans
+- **Security:** OWASP Top 10 - Injection attacks
+
+---
+
+## 🚀 Next Steps (Optional)
+
+If you want to extend this project:
+
+1. ✅ **Add Maven/Gradle build** - Create `pom.xml` or `build.gradle`
+2. ✅ **Create Repository** - `StudentSubjectEnrollmentRepository extends JpaRepository`
+3. ✅ **Create Service** - Business logic layer
+4. ✅ **Create REST Controller** - API endpoints
+5. ✅ **Write Unit Tests** - Test domain primitives validation
+6. ✅ **Write Integration Tests** - Test full flow
+7. ✅ **Add application.properties** - Configure Spring Boot + H2
+8. ✅ **Run the application** - Test with real HTTP requests
+
+---
+
+## ✨ Summary
+
+**You successfully:**
+- ✅ Created DDD base classes
+- ✅ Replaced 5 primitive types with validated domain primitives
+- ✅ Refactored `StudentSubjectEnrollment` to use domain primitives
+- ✅ Removed generic setters, added domain methods
+- ✅ Switched from sequential IDs to UUIDs
+- ✅ Applied "Secure by Design" principles
+
+**Result:**
+- 🛡️ SQL injection prevented (character whitelisting)
+- 🛡️ Enumeration attacks prevented (UUIDs)
+- 🛡️ Invalid business data prevented (fail-fast validation)
+- 🛡️ Type confusion prevented (distinct types)
+- 🛡️ Maintainability improved (domain logic in domain)
+
+**Congratulations! You've transformed a primitive-obsessed class into a secure, type-safe domain model.** 🎉
