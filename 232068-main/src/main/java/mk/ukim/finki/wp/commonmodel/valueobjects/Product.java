@@ -7,6 +7,7 @@ import mk.ukim.finki.wp.commonmodel.valueobjects.*;
 import java.time.ZonedDateTime;
 import static org.apache.commons.lang3.Validate.*;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import static org.apache.commons.lang3.Validate.*;
 
 @Getter
 @Entity
@@ -43,9 +44,12 @@ public class Product extends AbstractEntity<ProductId> {
         notNull(dateOfProduction, "dateOfProduction must not be null");
         isTrue(dateOfProduction.isBefore(ZonedDateTime.now()), "dateOfProduction must be in the past");
         this.dateOfProduction = dateOfProduction;
+        this.checkInvariants();
     }
     public void clearDateOfProduction() {
         this.dateOfProduction = null;
+        this.dateOfExpiry = null;
+        this.checkInvariants();
     }
     public void updateProductName(Name name) {
         this.name = notNull(name, "name must not be null");
@@ -55,6 +59,7 @@ public class Product extends AbstractEntity<ProductId> {
         isTrue(dateOfProduction.isBefore(ZonedDateTime.now()),
                 "dateOfProduction must be in the past");
         this.dateOfProduction = dateOfProduction;
+        this.checkInvariants();
         return this;
     }
 
@@ -63,6 +68,24 @@ public class Product extends AbstractEntity<ProductId> {
         isTrue(dateOfExpiry.isAfter(ZonedDateTime.now()),
                 "dateOfExpiry must be in the future");
         this.dateOfExpiry = dateOfExpiry;
+        this.checkInvariants();
         return this;
+    }
+    private void checkInvariants() {
+        validState((dateOfProduction == null && dateOfExpiry == null)
+                        || (dateOfProduction != null && dateOfExpiry == null)
+                        || (dateOfProduction != null && dateOfProduction.isBefore(dateOfExpiry)),
+                "dateOfProduction must be before dateOfExpiry");
+    }
+    public void updateProductDateOfExpiry(ZonedDateTime dateOfExpiry) {
+        notNull(dateOfExpiry, "dateOfExpiry must not be null");
+        isTrue(dateOfExpiry.isAfter(ZonedDateTime.now()), "dateOfExpiry must be in the future");
+        this.dateOfExpiry = dateOfExpiry;
+        this.checkInvariants();
+    }
+
+    public void clearDateOfExpiry() {
+        this.dateOfExpiry = null;
+        this.checkInvariants();
     }
 }
