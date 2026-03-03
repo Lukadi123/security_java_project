@@ -6,8 +6,6 @@ import mk.ukim.finki.wp.commonmodel.base.AbstractEntity;
 import mk.ukim.finki.wp.commonmodel.valueobjects.*;
 import java.time.ZonedDateTime;
 import static org.apache.commons.lang3.Validate.*;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import static org.apache.commons.lang3.Validate.*;
 
 @Getter
 @Entity
