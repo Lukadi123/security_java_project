@@ -1,6 +1,7 @@
 # DDD Refactoring Project - SDB 2026
 
 ## Project Structure
+
 ```
 src/main/java/mk/ukim/finki/wp/commonmodel/
 │
@@ -21,6 +22,8 @@ src/main/java/mk/ukim/finki/wp/commonmodel/
 │   ├── GroupName.java
 │   ├── GroupId.java
 │   ├── ProductId.java
+│   ├── OrderId.java
+│   ├── ShoppingCartId.java
 │   ├── Name.java
 │   ├── Money.java
 │   ├── Quantity.java
@@ -31,6 +34,13 @@ src/main/java/mk/ukim/finki/wp/commonmodel/
 │
 ├── product/
 │   └── Product.java
+│
+├── order/
+│   ├── OrderStatus.java
+│   ├── OrderState.java
+│   ├── Order.java
+│   ├── ShoppingCartStatus.java
+│   └── ShoppingCart.java
 │
 └── teachingallocation/
     ├── JoinedSubject.java
@@ -49,8 +59,8 @@ Refactored `StudentSubjectEnrollment` from primitive obsession (`String`, `Short
 | Class | Before | After |
 |---|---|---|
 | `StudentSubjectEnrollmentId` | `String id` | UUID, validated, type-safe |
-| `InvalidNote` | `String` (0-4000 chars) | 10-4000 chars, character whitelist |
-| `NumberOfEnrollments` | `Short` (could be -999) | 1-10 range, domain operations |
+| `InvalidNote` | `String` (0–4000 chars) | 10–4000 chars, character whitelist |
+| `NumberOfEnrollments` | `Short` (could be -999) | 1–10 range, domain operations |
 | `GroupName` | `String` (SQL injection possible) | Alphanumeric + limited punctuation |
 | `GroupId` | `Long` (sequential, enumerable) | UUID-based, non-enumerable |
 
@@ -65,6 +75,7 @@ Refactored `StudentSubjectEnrollment` from primitive obsession (`String`, `Short
 | Validation | None | Fail-fast at construction |
 
 ### Domain Methods
+
 ```java
 enrollment.markAsInvalid(new InvalidNote("Missing prerequisite Math101"));
 enrollment.markAsValid();
@@ -88,22 +99,20 @@ boolean canRetry = enrollment.canReEnroll();
 Built a `Product` entity from scratch across 6 commits, progressively applying techniques for safe state management.
 
 ### Commit 1: Required Constructor + Optional Fields
-
 - Required-argument constructor — `name`, `price`, `quantity` can never be null on creation
 - Protected no-arg constructor for JPA only
 - Optional `dateOfProduction` settable after construction, validated to not be in the future
 
 ### Commit 2: Separate Update and Clear Methods
-
 - `updateProductDateOfProduction()` — strictly an update, rejects null
 - `clearDateOfProduction()` — explicit domain action for clearing
 - `updateProductName()` — update name after construction
 - Each method has exactly one responsibility
 
 ### Commit 3: Fluent Interface
-
 - `withDateOfProduction()` and `withDateOfExpiry()` return `this` for chaining
 - Construction reads like natural language:
+
 ```java
 Product product = new Product(name, price, quantity)
         .withDateOfProduction(productionDate)
@@ -111,11 +120,11 @@ Product product = new Product(name, price, quantity)
 ```
 
 ### Commit 4: Cross-Field Invariants
-
 - `dateOfExpiry` added as second optional date field
 - `checkInvariants()` enforces: if both dates set, production must be before expiry
 - Every public mutating method calls `checkInvariants()` before returning
 - `clearDateOfProduction()` also clears `dateOfExpiry` — semantically linked
+
 ```java
 private void checkInvariants() {
     validState((dateOfProduction == null && dateOfExpiry == null)
@@ -126,10 +135,10 @@ private void checkInvariants() {
 ```
 
 ### Commit 5: Builder Pattern
-
 - Static inner `Builder` class hides the half-built product
 - `checkInvariants()` called once in `build()`, not after every step
 - Builder self-destructs after `build()` — cannot hand out the same product twice
+
 ```java
 Product product = new Product.Builder(name, price, quantity)
         .withDateOfProduction(productionDate)
@@ -138,7 +147,6 @@ Product product = new Product.Builder(name, price, quantity)
 ```
 
 ### Commit 6: Securing Collections
-
 - `Tag` value object — immutable, `final` field, no setters
 - `tags()` returns `Collections.unmodifiableList()` — prevents structural modification
 - `getTags()` kept for JPA compatibility
@@ -146,23 +154,112 @@ Product product = new Product.Builder(name, price, quantity)
 
 | Threat | Defense |
 |---|---|
-| Caller replaces the whole list | Field is private — no setter |
+| Caller replaces the whole list | Field is `private` — no setter |
 | Caller adds/removes via returned reference | `Collections.unmodifiableList()` |
 | Caller modifies items inside the list | `Tag` is immutable |
 | List is null on a new product | Initialized in constructor |
 
 ---
 
-## Key Principles
+## Exercise 3: Reducing Complexity of State
+
+Introduced the `Order` aggregate and `ShoppingCart` aggregate, progressively applying three patterns for managing complex entity state.
+
+### Commit 1: Order Aggregate with State-Guarded Methods
+
+Introduced `Order` with a full lifecycle defined in `OrderStatus`:
+
+| State | Meaning |
+|---|---|
+| `CREATED` | Order just created; products can still be added/removed |
+| `SUBMITTED` | Customer has finalized; no more product changes |
+| `PROCESSED` | Order accepted and being prepared |
+| `IN_TRANSPORT` | Order is out for delivery |
+| `DELIVERED` | Order successfully delivered (requires payment) |
+| `CANCELED` | Order was cancelled before submission |
+
+Every mutating method guards its precondition with `isTrue()` before applying any change:
+
+- `addProduct / removeProduct / clearProducts` — only in `CREATED`
+- `cancel()` — only from `CREATED`
+- `submit()` — only from `CREATED`, requires at least one product
+- `process()` — only from `SUBMITTED`
+- `beginTransport()` — only from `PROCESSED`
+- `pay()` — from `PROCESSED` or `IN_TRANSPORT` (payment is orthogonal to transport)
+- `deliver()` — only from `IN_TRANSPORT` and only if `isPaid = true`
+
+All constraints live inside the aggregate — no service layer needed to enforce them.
+
+### Commit 2: Dedicated `OrderState` Value Object
+
+Extracted state logic from `Order` into a separate `@Embeddable` `OrderState` class.
+
+`OrderState` owns two fields together: `orderStatus` + `isPaid`. These belong together because their combined value determines what is allowed — keeping them in the same object makes that relationship explicit.
+
+`Order` methods become thin wrappers that delegate to `OrderState`:
+
+```java
+public void cancel() { state.cancel(); }
+public void submit() { state.submit(!products.isEmpty()); }
+```
+
+**Benefits:**
+- **Single responsibility** — `OrderState` manages transitions, `Order` manages data
+- **Cohesion** — `orderStatus` and `isPaid` can never drift apart
+- **Testability** — `OrderState` can be unit-tested without constructing a full `Order`
+
+### Commit 3: Entity Relay — ShoppingCart + Order
+
+Split the `Order` lifecycle into two focused aggregates:
+
+**`ShoppingCart`** handles the first leg (pre-submission):
+- Starts in `CREATED`
+- Manages product list: `addProduct()`, `removeProduct()`, `clearProducts()`
+- `cancel()` — only from `CREATED`
+- `submit()` — validates cart has products, marks cart `SUBMITTED`, creates and returns a new `Order`
+
+**`Order`** handles the second leg (post-submission):
+- `CREATED` removed from `OrderStatus` entirely
+- Born only from `ShoppingCart.submit()` — constructor is `protected`
+- Starts directly in `SUBMITTED` — product list is locked in at creation
+- Handles: `cancel()`, `process()`, `pay()`, `beginTransport()`, `deliver()`
+
+**The relay:**
+
+```
+ShoppingCart:  CREATED → SUBMITTED
+                       ↘ CANCELED
+                            ↓ submit() creates an Order
+
+Order:         SUBMITTED → PROCESSED → IN_TRANSPORT → DELIVERED
+                       ↘ CANCELED        ↑ pay() anytime from PROCESSED
+```
+
+**When to apply Entity Relay:**
+- State graph has grown too large to audit safely
+- There is a clear cut point with no loopbacks between phases
+- A single event triggers the handoff (here: submitting the cart)
+
+### Security Takeaways
+
+State management is a security concern — every gap in an entity's state model is a potential attack vector:
+
+- An order modifiable after payment → attacker receives goods without paying
+- An order shippable without payment → direct financial loophole
+- State checks scattered across services → inconsistency exploitable over time
+
+All three patterns serve the same goal: **make invalid states unrepresentable and valid transitions explicit, auditable, and impossible to bypass**.
+
+---
+
+## Key Principles Applied (All Exercises)
 
 - **"If it's not valid, it can't exist"** — validation at construction time
-- **Fail Fast** — invalid data rejected immediately
+- **Fail Fast** — invalid data rejected immediately at the boundary
 - **Validation Order** — null check → length check → regex (cheap to expensive)
 - **Immutability** — value objects never change, operations return new instances
 - **Domain Methods over Setters** — `markAsInvalid(note)` not `setValid(false)`
-- **Partially Immutable Entities** — `id` is final, other fields change via domain methods
-
----
+- **Constraints inside the aggregate** — not in service layers or controllers
 
 ## Learning Resources
 
