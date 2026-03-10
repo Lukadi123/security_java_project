@@ -9,35 +9,12 @@ import java.util.UUID;
 import static org.apache.commons.lang3.Validate.matchesPattern;
 import static org.apache.commons.lang3.Validate.notNull;
 
-/**
- * Base class for all domain object IDs.
- *
- * SECURITY BENEFIT:
- * - Uses UUIDs instead of sequential integers (1, 2, 3...)
- * - Sequential IDs are enumerable: if /api/enrollment/1 exists, try /2, /3...
- * - UUIDs are unpredictable: 550e8400-e29b-41d4-a716-446655440000
- *
- * VALIDATION:
- * - Ensures ID format is correct before construction
- * - Invalid IDs cannot exist in the system
- *
- * JPA ANNOTATIONS:
- * - @MappedSuperclass: JPA recognizes this as inheritable
- * - @Embeddable: Can be embedded into entities
- */
 @MappedSuperclass
 @Embeddable
 public class DomainObjectId implements ValueObject {
 
     private String id;
 
-    /**
-     * Constructor for restoring an ID from a string (e.g., from database).
-     *
-     * @param uuid The UUID string in standard format
-     * @throws NullPointerException if uuid is null
-     * @throws IllegalArgumentException if uuid format is invalid
-     */
     protected DomainObjectId(String uuid) {
         notNull(uuid, "uuid must not be null");
         matchesPattern(uuid,
@@ -46,10 +23,6 @@ public class DomainObjectId implements ValueObject {
         this.id = uuid;
     }
 
-    /**
-     * Constructor for generating a new random UUID.
-     * Used when creating new domain objects.
-     */
     protected DomainObjectId() {
         this.id = UUID.randomUUID().toString();
     }
