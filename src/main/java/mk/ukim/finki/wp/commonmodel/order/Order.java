@@ -6,11 +6,8 @@ import mk.ukim.finki.wp.commonmodel.base.AbstractEntity;
 import mk.ukim.finki.wp.commonmodel.valueobjects.OrderId;
 import mk.ukim.finki.wp.commonmodel.valueobjects.ProductId;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import static org.apache.commons.lang3.Validate.notNull;
 
 @Getter
 @Entity
@@ -23,39 +20,18 @@ public class Order extends AbstractEntity<OrderId> {
     @ElementCollection
     private List<ProductId> products;
 
-    public Order() {
+    protected Order(List<ProductId> products) {
         super(new OrderId());
         this.state = new OrderState();
-        this.products = new ArrayList<>();
+        this.products = products;
     }
 
-    protected Order(boolean jpa) {
+    protected Order() {
         super();
-    }
-
-    public void addProduct(ProductId productId) {
-        state.modifyProducts();
-        notNull(productId, "productId must not be null");
-        products.add(productId);
-    }
-
-    public void removeProduct(ProductId productId) {
-        state.modifyProducts();
-        notNull(productId, "productId must not be null");
-        products.remove(productId);
-    }
-
-    public void clearProducts() {
-        state.modifyProducts();
-        products.clear();
     }
 
     public void cancel() {
         state.cancel();
-    }
-
-    public void submit() {
-        state.submit(!products.isEmpty());
     }
 
     public void process() {

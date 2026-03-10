@@ -1,9 +1,7 @@
 package mk.ukim.finki.wp.commonmodel.order;
 
-public enum OrderStatus {
+public enum ShoppingCartStatus {
+    CREATED,
     SUBMITTED,
-    PROCESSED,
-    IN_TRANSPORT,
-    DELIVERED,
     CANCELED
 }

@@ -16,29 +16,16 @@ public class OrderState implements ValueObject {
     private boolean isPaid;
 
     public OrderState() {
-        this.orderStatus = OrderStatus.CREATED;
+        this.orderStatus = OrderStatus.SUBMITTED;
         this.isPaid = false;
     }
 
     protected OrderState(boolean jpa) {}
 
-    public void modifyProducts() {
-        isTrue(orderStatus == OrderStatus.CREATED,
-                "Cannot modify products: order must be in CREATED status, but was " + orderStatus);
-    }
-
     public void cancel() {
-        isTrue(orderStatus == OrderStatus.CREATED,
-                "Cannot cancel: order must be in CREATED status, but was " + orderStatus);
+        isTrue(orderStatus == OrderStatus.SUBMITTED,
+                "Cannot cancel: order must be in SUBMITTED status, but was " + orderStatus);
         this.orderStatus = OrderStatus.CANCELED;
-    }
-
-    public void submit(boolean hasProducts) {
-        isTrue(orderStatus == OrderStatus.CREATED,
-                "Cannot submit: order must be in CREATED status, but was " + orderStatus);
-        isTrue(hasProducts,
-                "Cannot submit: order must have at least one product");
-        this.orderStatus = OrderStatus.SUBMITTED;
     }
 
     public void process() {
