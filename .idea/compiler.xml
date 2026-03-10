@@ -15,10 +15,10 @@
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
         </processorPath>
+        <module name="sdb2026" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="sdb2026" target="23" />
       <module name="src" target="23" />
     </bytecodeTargetLevel>
   </component>
