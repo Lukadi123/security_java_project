@@ -2,12 +2,12 @@ package mk.ukim.finki.wp.commonmodel.valueobjects;
 
 import mk.ukim.finki.wp.commonmodel.base.DomainObjectId;
 
-public class OrderId extends DomainObjectId {
-    public OrderId() {
+public class ApplicantId extends DomainObjectId {
+    public ApplicantId() {
         super();
     }
 
-    public OrderId(String id) {
+    public ApplicantId(String id) {
         super(id);
     }
 }

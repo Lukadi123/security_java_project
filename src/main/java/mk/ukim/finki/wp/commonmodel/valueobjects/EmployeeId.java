@@ -2,12 +2,12 @@ package mk.ukim.finki.wp.commonmodel.valueobjects;
 
 import mk.ukim.finki.wp.commonmodel.base.DomainObjectId;
 
-public class ShoppingCartId extends DomainObjectId {
-    public ShoppingCartId() {
+public class EmployeeId extends DomainObjectId {
+    public EmployeeId() {
         super();
     }
 
-    public ShoppingCartId(String id) {
+    public EmployeeId(String id) {
         super(id);
     }
 }

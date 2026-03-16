@@ -22,8 +22,8 @@ src/main/java/mk/ukim/finki/wp/commonmodel/
 │   ├── GroupName.java
 │   ├── GroupId.java
 │   ├── ProductId.java
-│   ├── OrderId.java
-│   ├── ShoppingCartId.java
+│   ├── EmployeeId.java
+│   ├── ApplicantId.java
 │   ├── Name.java
 │   ├── Money.java
 │   ├── Quantity.java
@@ -35,12 +35,13 @@ src/main/java/mk/ukim/finki/wp/commonmodel/
 ├── product/
 │   └── Product.java
 │
-├── order/
-│   ├── OrderStatus.java
-│   ├── OrderState.java
-│   ├── Order.java
-│   ├── ShoppingCartStatus.java
-│   └── ShoppingCart.java
+├── employee/
+│   ├── EmployeeStatus.java
+│   ├── EmployeeState.java
+│   ├── Employee.java
+│   ├── ApplicantStatus.java
+│   ├── Applicant.java
+│   └── DataAccessPolicy.java
 │
 └── teachingallocation/
     ├── JoinedSubject.java
@@ -163,90 +164,82 @@ Product product = new Product.Builder(name, price, quantity)
 
 ## Exercise 3: Reducing Complexity of State
 
-Introduced the `Order` aggregate and `ShoppingCart` aggregate, progressively applying three patterns for managing complex entity state.
+Implemented an Apprentice/Employee lifecycle system following the same DDD aggregate patterns (state-guarded methods, dedicated state object, entity relay).
 
-### Commit 1: Order Aggregate with State-Guarded Methods
-
-Introduced `Order` with a full lifecycle defined in `OrderStatus`:
+### EmployeeStatus Enum
 
 | State | Meaning |
 |---|---|
-| `CREATED` | Order just created; products can still be added/removed |
-| `SUBMITTED` | Customer has finalized; no more product changes |
-| `PROCESSED` | Order accepted and being prepared |
-| `IN_TRANSPORT` | Order is out for delivery |
-| `DELIVERED` | Order successfully delivered (requires payment) |
-| `CANCELED` | Order was cancelled before submission |
+| `APPLICANT` | Initial application state |
+| `APPRENTICE` | Approved and starting out |
+| `JUNIOR` | Promoted from apprentice |
+| `SENIOR` | Promoted from junior |
+| `MANAGER` | Promoted from senior |
+| `REJECTED` | Application rejected |
+| `TERMINATED` | Employment ended |
 
-Every mutating method guards its precondition with `isTrue()` before applying any change:
+### Dedicated `EmployeeState` Value Object
 
-- `addProduct / removeProduct / clearProducts` — only in `CREATED`
-- `cancel()` — only from `CREATED`
-- `submit()` — only from `CREATED`, requires at least one product
-- `process()` — only from `SUBMITTED`
-- `beginTransport()` — only from `PROCESSED`
-- `pay()` — from `PROCESSED` or `IN_TRANSPORT` (payment is orthogonal to transport)
-- `deliver()` — only from `IN_TRANSPORT` and only if `isPaid = true`
+`@Embeddable` value object that owns `employeeStatus` and enforces all state transitions using Apache Commons `Validate.isTrue()`:
 
-All constraints live inside the aggregate — no service layer needed to enforce them.
+- `promote()` — only from APPRENTICE, JUNIOR, or SENIOR (advances to next level)
+- `terminate()` — only from APPRENTICE, JUNIOR, or SENIOR
 
-### Commit 2: Dedicated `OrderState` Value Object
-
-Extracted state logic from `Order` into a separate `@Embeddable` `OrderState` class.
-
-`OrderState` owns two fields together: `orderStatus` + `isPaid`. These belong together because their combined value determines what is allowed — keeping them in the same object makes that relationship explicit.
-
-`Order` methods become thin wrappers that delegate to `OrderState`:
+`Employee` methods become thin wrappers that delegate to `EmployeeState`:
 
 ```java
-public void cancel() { state.cancel(); }
-public void submit() { state.submit(!products.isEmpty()); }
+public void promote() { state.promote(); }
+public void terminate() { state.terminate(); }
 ```
 
-**Benefits:**
-- **Single responsibility** — `OrderState` manages transitions, `Order` manages data
-- **Cohesion** — `orderStatus` and `isPaid` can never drift apart
-- **Testability** — `OrderState` can be unit-tested without constructing a full `Order`
+### Entity Relay — Applicant + Employee
 
-### Commit 3: Entity Relay — ShoppingCart + Order
+Split the lifecycle into two focused aggregates:
 
-Split the `Order` lifecycle into two focused aggregates:
+**`Applicant`** handles the first leg (application phase):
+- Public constructor — starts in `APPLICANT` status
+- `approve()` — marks applicant `APPROVED`, creates and returns a new `Employee`
+- `reject()` — marks applicant `REJECTED`
 
-**`ShoppingCart`** handles the first leg (pre-submission):
-- Starts in `CREATED`
-- Manages product list: `addProduct()`, `removeProduct()`, `clearProducts()`
-- `cancel()` — only from `CREATED`
-- `submit()` — validates cart has products, marks cart `SUBMITTED`, creates and returns a new `Order`
-
-**`Order`** handles the second leg (post-submission):
-- `CREATED` removed from `OrderStatus` entirely
-- Born only from `ShoppingCart.submit()` — constructor is `protected`
-- Starts directly in `SUBMITTED` — product list is locked in at creation
-- Handles: `cancel()`, `process()`, `pay()`, `beginTransport()`, `deliver()`
+**`Employee`** handles the second leg (employment phase):
+- Protected constructor — only created via `Applicant.approve()`
+- Starts in `APPRENTICE` status
+- Delegates all state checks to `EmployeeState`
+- `promote()` — advances through APPRENTICE → JUNIOR → SENIOR → MANAGER
+- `terminate()` — only from APPRENTICE, JUNIOR, or SENIOR
 
 **The relay:**
 
 ```
-ShoppingCart:  CREATED → SUBMITTED
-                       ↘ CANCELED
-                            ↓ submit() creates an Order
+Applicant:  APPLICANT → APPROVED  (creates Employee)
+                      → REJECTED
 
-Order:         SUBMITTED → PROCESSED → IN_TRANSPORT → DELIVERED
-                       ↘ CANCELED        ↑ pay() anytime from PROCESSED
+Employee:   APPRENTICE → JUNIOR → SENIOR → MANAGER
+            (APPRENTICE / JUNIOR / SENIOR → TERMINATED)
 ```
 
-**When to apply Entity Relay:**
-- State graph has grown too large to audit safely
-- There is a clear cut point with no loopbacks between phases
-- A single event triggers the handoff (here: submitting the cart)
+### DataAccessPolicy
+
+A component that checks an employee's current status and returns what data they are allowed to access:
+
+| Status | Allowed Access |
+|---|---|
+| `APPRENTICE` | public docs, own profile |
+| `JUNIOR` | project data, internal tools |
+| `SENIOR` | team data |
+| `MANAGER` | payroll, HR data |
+
+```java
+List<String> access = DataAccessPolicy.getAllowedAccess(employee);
+```
 
 ### Security Takeaways
 
 State management is a security concern — every gap in an entity's state model is a potential attack vector:
 
-- An order modifiable after payment → attacker receives goods without paying
-- An order shippable without payment → direct financial loophole
-- State checks scattered across services → inconsistency exploitable over time
+- An applicant approving themselves without review → unauthorized access
+- An employee promoting themselves without checks → privilege escalation
+- Access policies scattered across services → inconsistency exploitable over time
 
 All three patterns serve the same goal: **make invalid states unrepresentable and valid transitions explicit, auditable, and impossible to bypass**.
 
