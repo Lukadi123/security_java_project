@@ -3,7 +3,7 @@ package mk.ukim.finki.sdb2026;
 import mk.ukim.finki.sdb2026.model.valueObjects.GroupName;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
-
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.repeat;
@@ -102,6 +102,24 @@ public class GroupNameTest {
                         )
                 )
         );
+    }
+    @TestFactory
+    Stream<DynamicTest> shouldRejectExtremeInput() {
+        return Stream.<Supplier<String>>of(
+                        () -> repeat("X", 10_000),
+                        () -> repeat("X", 100_000),
+                        () -> repeat("X", 1_000_000),
+                        () -> repeat("X", 10_000_000),
+                        () -> repeat("X", 20_000_000),
+                        () -> repeat("X", 40_000_000))
+                .map(nameSupplier ->
+                        dynamicTest("Group name length: " + nameSupplier.get().length(),
+                                () -> assertThrows(
+                                        RuntimeException.class,
+                                        () -> new GroupName(nameSupplier.get())
+                                )
+                        )
+                );
     }
 }
 
