@@ -4,6 +4,7 @@ import jakarta.persistence.Embeddable;
 import lombok.Getter;
 import mk.ukim.finki.wp.commonmodel.base.ValueObject;
 
+import static org.apache.commons.lang3.Validate.isTrue;
 import static org.apache.commons.lang3.Validate.matchesPattern;
 import static org.apache.commons.lang3.Validate.notNull;
 
@@ -19,6 +20,8 @@ public class GroupName implements ValueObject {
 
     public GroupName(String name) {
         notNull(name, "GroupName must not be null");
+        isTrue(name.length() >= 1 && name.length() <= 50,
+                "GroupName must be 1-50 characters long");
         matchesPattern(name, "^[A-Za-z0-9 .\\-/&:+=]{1,50}$",
                 "GroupName must be 1-50 characters and contain only letters, digits, " +
                         "spaces, and the following special characters: . - / & : + =");
