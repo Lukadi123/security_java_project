@@ -61,4 +61,47 @@ public class GroupNameTest {
                 )
         );
     }
+    @TestFactory
+    Stream<DynamicTest> shouldNotBeAcceptedInvalidInput() {
+        return Stream.of(
+                null,
+                "",
+                " ",
+                "\t",
+                "\n",
+                "©@£$∞§|[]≈±´•Ωé®†μüıoeπ˙~ß∂¸√ç‹›''‚…",
+                "\"=0@$*^%;<!>.:\\\\()&#\\\"\","
+        ).map(name ->
+                dynamicTest("Group name: " + name,
+                        () -> assertThrows(
+                                RuntimeException.class,
+                                () -> new GroupName(name)
+                        )
+                )
+        );
+    }
+
+    @TestFactory
+    Stream<DynamicTest> shouldRejectSql() {
+        return Stream.of(
+                "'or%20select *",
+                "admin'--",
+                "<>\"'%;)(&+",
+                "'%20or%20''='",
+                "'%20or%20'x'='x",
+                "\"%20or%20\"x\"=\"x",
+                "')%20or%20('x'='x",
+                "0 or 1=1",
+                "' or 0=0 ",
+                "\" or 0=0 "
+        ).map(name ->
+                dynamicTest("Group name: " + name,
+                        () -> assertThrows(
+                                RuntimeException.class,
+                                () -> new GroupName(name)
+                        )
+                )
+        );
+    }
 }
+
