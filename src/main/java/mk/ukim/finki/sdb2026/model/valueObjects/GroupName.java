@@ -19,9 +19,9 @@ public class GroupName implements ValueObject {
 
     public GroupName(String name) {
         notNull(name, "GroupName must not be null");
-        matchesPattern(name, "^[A-Za-z0-9 .\\-/]{1,50}$",
+        matchesPattern(name, "^[A-Za-z0-9 .\\-/&:+=]{1,50}$",
                 "GroupName must be 1-50 characters and contain only letters, digits, " +
-                        "spaces, and the following special characters: . - /");
+                        "spaces, and the following special characters: . - / & : + =");
         this.name = name;
     }
 
