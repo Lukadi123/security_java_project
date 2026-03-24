@@ -50,19 +50,19 @@ public class NumberOfEnrollments implements ValueObject {
      */
     public NumberOfEnrollments(Short value) {
         notNull(value, "NumberOfEnrollments must not be null");
-        inclusiveBetween((short) MIN_ENROLLMENTS, (short) MAX_ENROLLMENTS, value,
+        inclusiveBetween(MIN_ENROLLMENTS, MAX_ENROLLMENTS, value.intValue(),
                 "NumberOfEnrollments must be between " + MIN_ENROLLMENTS + " and " + MAX_ENROLLMENTS +
                         ", got: " + value);
         this.value = value;
     }
 
-    /**
-     * Convenience constructor accepting int instead of Short.
-     */
     public NumberOfEnrollments(int value) {
-        this((short) value);
+        notNull((Short)(short) value, "NumberOfEnrollments must not be null");
+        inclusiveBetween(MIN_ENROLLMENTS, MAX_ENROLLMENTS, value,
+                "NumberOfEnrollments must be between " + MIN_ENROLLMENTS + " and " + MAX_ENROLLMENTS +
+                        ", got: " + value);
+        this.value = (short) value;
     }
-
     /**
      * JPA no-arg constructor.
      */
