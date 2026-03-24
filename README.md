@@ -544,5 +544,36 @@ If you want to extend this project:
 - 🛡️ Type confusion prevented (distinct types)
 - 🛡️ Maintainability improved (domain logic in domain)
 
-АУДИТОРИСКА 4
-ВЕ МОЛАМ ТОЈ ШТО ЌЕ ПРЕГЛЕДУВА ТУКА ДА СТАВИ КОМЕНТАРИ:
+## Exercise 5: Leveraging Your Delivery Pipeline for Security
+
+Applied all four security test strategies to the `GroupName` domain primitive, demonstrating that security tests are no different from regular tests and should be integrated into the delivery pipeline.
+
+### New Files
+- `src/main/java/mk/ukim/finki/sdb2026/model/valueObjects/GroupName.java` — improved GroupName with full security validation
+- `src/test/java/mk/ukim/finki/sdb2026/GroupNameTest.java` — four-strategy security test suite
+
+### The Four Test Strategies
+
+| Test Type | Commit | Outcome |
+|-----------|--------|---------|
+| Normal input | Commit 1 & 2 | Revealed missing characters (`&`, `:`, `+`, `=`) in the regex — fixed |
+| Boundary input | Commit 3 | Confirmed structural rules with explicit `isTrue` length guard |
+| Invalid input | Commit 4 & 5 | Revealed SQL injection bypass (`0 or 1=1`, `admin'--`) — fixed with blocklist |
+| Extreme input | Commit 6 | Confirmed fast-fail behaviour prevents ReDoS |
+
+### Commit History
+
+**Commit 1** — Added `GroupName` value object with narrow regex (missing `&`, `:`, `+`, `=`) and normal behavior tests. 4 tests fail intentionally — the tests reveal the domain rule is too narrow.
+
+**Commit 2** — Fixed the regex to include the missing characters. All 6 normal behavior tests pass.
+
+**Commit 3** — Added explicit `isTrue` length check before the regex (fast-fail gate). Added boundary tests confirming edge cases are accepted and out-of-boundary input is rejected.
+
+**Commit 4** — Added invalid input tests and SQL injection tests. Revealed that `0 or 1=1` and `admin'--` bypass the regex — they are composed entirely of allowed characters.
+
+**Commit 5** — Fixed the bypass by adding a `SQL_INJECTION_PATTERN` blocklist and a blank check. All tests pass.
+
+**Commit 6** — Added extreme input tests (up to 40 million characters). All rejected instantly by the `isTrue` length check — the regex engine is never reached, confirming ReDoS is prevented.
+
+### Defence in Depth — Three Validation Layers
+```java
