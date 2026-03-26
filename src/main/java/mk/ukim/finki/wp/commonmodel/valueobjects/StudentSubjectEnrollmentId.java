@@ -40,4 +40,8 @@ public class StudentSubjectEnrollmentId extends DomainObjectId {
     public StudentSubjectEnrollmentId() {
         super();
     }
+    public static StudentSubjectEnrollmentId fromString(String value) {
+        return new StudentSubjectEnrollmentId(value);
+    }
+
 }

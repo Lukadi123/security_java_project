@@ -78,10 +78,13 @@ public class NumberOfEnrollments implements ValueObject {
      * @throws IllegalArgumentException if already at maximum (10)
      */
     public NumberOfEnrollments increment() {
-        isTrue(value < MAX_ENROLLMENTS,
-                "Cannot increment: already at maximum enrollments (" + MAX_ENROLLMENTS + ")");
+        if (!canEnrollAgain()) {
+            throw new IllegalArgumentException(
+                    "Cannot increment: already at maximum enrollments (" + MAX_ENROLLMENTS + ")");
+        }
         return new NumberOfEnrollments((short) (value + 1));
     }
+
 
     /**
      * Check if student can enroll again.

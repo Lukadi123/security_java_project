@@ -41,7 +41,10 @@ public class Product extends AbstractEntity<ProductId> {
         this.price = notNull(price, "price must not be null");
         this.quantity = notNull(quantity, "quantity must not be null");
         this.tags = new ArrayList<>();
+        checkInvariants();
+
     }
+
 
     protected Product() {}
 

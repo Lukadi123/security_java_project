@@ -6,7 +6,14 @@ StudentSubjectEnrollmentId id = new StudentSubjectEnrollmentId()
 
 Единствено подобрување кое што би го препорачала е креирање на конструктор со параметри, наместо конструктор без параметри, бидејќи конструкторот без параметри може да биде ризичен.
 
-Пример: public static StudentSubjectEnrollmentId fromString(String value)
+Пример: public static StudentSubjectEnrollmentId fromString(String value) ------
+
+        одговор: Додаден нови методи во studentSubjectEnrollment и GroupId:  public static StudentSubjectEnrollmentId fromString(String value) {
+                                                                             return new StudentSubjectEnrollmentId(value);
+                                                                               }
+                                                                                public static GroupId fromString(String value) {
+                                                                                        return new GroupId(value);
+                                                                                    }
 
 InvalidNote note = new InvalidNote("Detailed reason...")
 
@@ -15,6 +22,10 @@ InvalidNote note = new InvalidNote("Detailed reason...")
 Подобрувањата кои што можат да бидат направени се следните: Regex whitelist не е дозволен за SQL injection, поради тоа што на DB layer треба да има parameterized queries, и лимитот поставен на 4000 карактери е прилично голем, можеби би било подобро доколку истиот се намали, на пример од 500 до 1000 карактери.
 
 private static final int MAX_LENGTH = 1000;
+
+
+        одговор: Променето е од 4000 на 1000 карактери долзината.
+
 
 NumberOfEnrollments num = new NumberOfEnrollments(5);
 
@@ -29,6 +40,8 @@ public NumberOfEnrollments increment() {
     if (!canEnrollAgain()) throw ...
 }
 
+        одговор: Променет  е increment()
+
 GroupName name = new GroupName("Group A");
 
 Добрите страни е тоа што има имплементирано ограничувања за должината на името на групата и тоа што има whitelist. Очигледно е дека имплементацијата е направена со anti-injection mindset, што е одлично бидејќи спречува SQL injections. 
@@ -36,6 +49,8 @@ GroupName name = new GroupName("Group A");
 Она што би го подобрила е тоа дека regex делот може да стане премногу ограничувачки, на пример со внесување на интернационални имиња. Сугестија за подобрување на ова би било дозволување на Unicode letters.
 
 GroupId id = GroupId.randomGroupId();
+
+        Одговор: Не би го сменил GroupID бидејќи добро е да има стрикнти ASCII, подобрува безбедност
 
 Одлична е имплементацијата на UUID, што го прави методот не-секвенцијален. Исто така, применувањето на factory метода, допринесува до чист API.
 
@@ -56,6 +71,9 @@ setValid(false)
 ќе има
 
 markAsInvalid(...)
+
+        одговор: Не би променил бидејчи веќе е имплементирано во кодот
+
 
 Ова ја крие логиката, гарантира invariant-и и спречува неконзистентна состојба.
 
@@ -80,6 +98,8 @@ checkInvariants()
 Треба да се осигураме дека: constructor → always calls checkInvariants()
 
 Главните подобрувања за кодот е тоа што треба конструкторите да се заменат со чисти factory методи. 
+
+        одговор: Додадено е checkInvariants() во конструкторот на Product.java
 
 На пример наместо new GroupId() да има GroupId.randomGroupId().
 

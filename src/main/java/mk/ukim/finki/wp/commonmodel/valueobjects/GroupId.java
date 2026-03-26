@@ -66,6 +66,10 @@ public class GroupId implements ValueObject {
         return new GroupId(UUID.randomUUID().toString());
     }
 
+    public static GroupId fromString(String value) {
+        return new GroupId(value);
+    }
+
     public String getId() {
         return id;
     }

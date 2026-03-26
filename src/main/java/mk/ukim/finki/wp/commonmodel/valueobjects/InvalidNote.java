@@ -48,7 +48,7 @@ public class InvalidNote implements ValueObject {
         notNull(note, "InvalidNote must not be null");
 
         // 2. Size check (cheap)
-        inclusiveBetween(10, 4000, note.length(),
+        inclusiveBetween(10, 1000, note.length(),
                 "InvalidNote must be between 10 and 4000 characters, got: " + note.length());
 
         // 3. Lexical content (expensive - regex last)
