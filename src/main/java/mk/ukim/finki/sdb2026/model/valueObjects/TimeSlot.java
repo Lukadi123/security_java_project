@@ -3,6 +3,8 @@ package mk.ukim.finki.sdb2026.model.valueObjects;
 import jakarta.persistence.Embeddable;
 import lombok.Getter;
 import mk.ukim.finki.wp.commonmodel.base.ValueObject;
+import static org.apache.commons.lang3.Validate.isTrue;
+
 
 import static org.apache.commons.lang3.Validate.matchesPattern;
 import static org.apache.commons.lang3.Validate.notNull;
@@ -19,11 +21,14 @@ public class TimeSlot implements ValueObject {
 
     public TimeSlot(String timeSlot) {
         notNull(timeSlot, "TimeSlot must not be null");
+        isTrue(timeSlot.length() >= 5 && timeSlot.length() <= 60,
+                "TimeSlot must be 5-60 characters long");
         matchesPattern(timeSlot, "^[A-Za-z0-9 :\\-+&()]{5,60}$",
                 "TimeSlot must be 5-60 characters long and contain only letters, digits, " +
-                        "spaces, colons, and hyphens");
+                        "spaces, and the following special characters: : - + & ( )");
         this.timeSlot = timeSlot;
     }
+
 
     @Override
     public String toString() { return timeSlot; }

@@ -3,6 +3,8 @@ package mk.ukim.finki.sdb2026;
 import mk.ukim.finki.sdb2026.model.valueObjects.TimeSlot;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.apache.commons.lang3.StringUtils.repeat;
 
 import java.util.stream.Stream;
 
@@ -26,4 +28,38 @@ public class TimeSlotTest {
                 )
         );
     }
+    @TestFactory
+    Stream<DynamicTest> shouldBeAcceptedBoundaryCases() {
+        return Stream.of(
+                "Mo 08",
+                "F 8:0",
+                "Mon 08:00-10:00 & Wed 08:00-10:00 + Fri 08:00-10:00 (Group A)",
+                "Sat 22:00-23:00",
+                "Mon (A)"
+        ).map(slot ->
+                dynamicTest("TimeSlot: " + slot,
+                        () -> assertDoesNotThrow(() -> new TimeSlot(slot))
+                )
+        );
+    }
+
+    @TestFactory
+    Stream<DynamicTest> shouldNotBeAcceptedBoundaryCases() {
+        return Stream.of(
+                "M 08",
+                repeat("X", 61),
+                "Mon 08:00-10:00 #Lab",
+                "Fri 10:00-12:00 @Room",
+                "Wed 09:00-11:00 50% full"
+        ).map(slot ->
+                dynamicTest("TimeSlot: " + slot,
+                        () -> assertThrows(
+                                IllegalArgumentException.class,
+                                () -> new TimeSlot(slot)
+                        )
+                )
+        );
+    }
+
+
 }
