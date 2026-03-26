@@ -60,5 +60,48 @@ public class CourseUrlTest {
                 )
         );
     }
+    @TestFactory
+    Stream<DynamicTest> shouldNotBeAcceptedInvalidInput() {
+        return Stream.of(
+                null,
+                "",
+                " ",
+                "\t",
+                "\n",
+                "javascript:alert(1)",
+                "ftp://files.finki.mk/notes.pdf",
+                "©@£$∞§|[]≈±´•Ωé®†μüıoeπ˙~ß∂¸√ç‹›''‚…"
+        ).map(url ->
+                dynamicTest("CourseUrl: " + url,
+                        () -> assertThrows(
+                                RuntimeException.class,
+                                () -> new CourseUrl(url)
+                        )
+                )
+        );
+    }
+
+    @TestFactory
+    Stream<DynamicTest> shouldRejectSql() {
+        return Stream.of(
+                "'or%20select *",
+                "admin'--",
+                "<>\"'%;)(&+",
+                "'%20or%20''='",
+                "'%20or%20'x'='x",
+                "\"%20or%20\"x\"=\"x",
+                "')%20or%20('x'='x",
+                "https://a.com/select/all",
+                "https://a.com/drop/table",
+                "https://a.com/union/query"
+        ).map(url ->
+                dynamicTest("CourseUrl: " + url,
+                        () -> assertThrows(
+                                RuntimeException.class,
+                                () -> new CourseUrl(url)
+                        )
+                )
+        );
+    }
 
 }
