@@ -19,7 +19,7 @@ public class TimeSlot implements ValueObject {
 
     public TimeSlot(String timeSlot) {
         notNull(timeSlot, "TimeSlot must not be null");
-        matchesPattern(timeSlot, "^[A-Za-z0-9 :\\-]{5,60}$",
+        matchesPattern(timeSlot, "^[A-Za-z0-9 :\\-+&()]{5,60}$",
                 "TimeSlot must be 5-60 characters long and contain only letters, digits, " +
                         "spaces, colons, and hyphens");
         this.timeSlot = timeSlot;
