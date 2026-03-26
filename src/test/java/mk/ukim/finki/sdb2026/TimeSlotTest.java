@@ -33,7 +33,7 @@ public class TimeSlotTest {
         return Stream.of(
                 "Mo 08",
                 "F 8:0",
-                "Mon 08:00-10:00 & Wed 08:00-10:00 + Fri 08:00-10:00 (Group A)",
+                "Mon 08:00-10:00 & Wed 08:00-10:00 + Fri 08:00-10:00 (Grp A)",
                 "Sat 22:00-23:00",
                 "Mon (A)"
         ).map(slot ->
@@ -55,6 +55,50 @@ public class TimeSlotTest {
                 dynamicTest("TimeSlot: " + slot,
                         () -> assertThrows(
                                 IllegalArgumentException.class,
+                                () -> new TimeSlot(slot)
+                        )
+                )
+        );
+    }
+
+    @TestFactory
+    Stream<DynamicTest> shouldNotBeAcceptedInvalidInput() {
+        return Stream.of(
+                null,
+                "",
+                " ",
+                "\t",
+                "\n",
+                "Mon",
+                "©@£$∞§|[]≈±´•Ωé®†μüıoeπ˙~ß∂¸√ç‹›''‚…",
+                "\"=0@$*^%;<!>.:\\\\()&#\\\"\","
+        ).map(slot ->
+                dynamicTest("TimeSlot: " + slot,
+                        () -> assertThrows(
+                                RuntimeException.class,
+                                () -> new TimeSlot(slot)
+                        )
+                )
+        );
+    }
+
+    @TestFactory
+    Stream<DynamicTest> shouldRejectSql() {
+        return Stream.of(
+                "'or%20select *",
+                "admin'--",
+                "<>\"'%;)(&+",
+                "'%20or%20''='",
+                "'%20or%20'x'='x",
+                "\"%20or%20\"x\"=\"x",
+                "')%20or%20('x'='x",
+                "0 or 1=1",
+                "' or 0=0 ",
+                "\" or 0=0 "
+        ).map(slot ->
+                dynamicTest("TimeSlot: " + slot,
+                        () -> assertThrows(
+                                RuntimeException.class,
                                 () -> new TimeSlot(slot)
                         )
                 )
