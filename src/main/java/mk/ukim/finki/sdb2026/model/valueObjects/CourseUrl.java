@@ -19,9 +19,11 @@ public class CourseUrl implements ValueObject {
 
     public CourseUrl(String url) {
         notNull(url, "CourseUrl must not be null");
-        matchesPattern(url, "^https://[A-Za-z0-9.\\-/]{2,192}$",
+        matchesPattern(url, "^https://[A-Za-z0-9.\\-/_?=&:]{2,192}$"
+                ,
                 "CourseUrl must start with https:// and contain only letters, digits, " +
-                        "and the following special characters: . - /");
+                        "and the following special characters: . - / _ ? = & :");
+
         this.url = url;
     }
 
