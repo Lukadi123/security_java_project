@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.apache.commons.lang3.StringUtils.repeat;
+import java.util.function.Supplier;
 
 import java.util.stream.Stream;
 
@@ -103,5 +104,24 @@ public class CourseUrlTest {
                 )
         );
     }
+    @TestFactory
+    Stream<DynamicTest> shouldRejectExtremeInput() {
+        return Stream.<Supplier<String>>of(
+                        () -> repeat("X", 10_000),
+                        () -> repeat("X", 100_000),
+                        () -> repeat("X", 1_000_000),
+                        () -> repeat("X", 10_000_000),
+                        () -> repeat("X", 20_000_000),
+                        () -> repeat("X", 40_000_000))
+                .map(urlSupplier ->
+                        dynamicTest("CourseUrl length: " + urlSupplier.get().length(),
+                                () -> assertThrows(
+                                        RuntimeException.class,
+                                        () -> new CourseUrl(urlSupplier.get())
+                                )
+                        )
+                );
+    }
+
 
 }
