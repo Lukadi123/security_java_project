@@ -4,7 +4,7 @@ import jakarta.persistence.Embeddable;
 import lombok.Getter;
 import mk.ukim.finki.wp.commonmodel.base.ValueObject;
 import static org.apache.commons.lang3.Validate.isTrue;
-
+import java.util.regex.Pattern;
 import static org.apache.commons.lang3.Validate.matchesPattern;
 import static org.apache.commons.lang3.Validate.notNull;
 
@@ -13,6 +13,15 @@ import static org.apache.commons.lang3.Validate.notNull;
 public class CourseUrl implements ValueObject {
 
     private final String url;
+
+    private static final Pattern SQL_INJECTION_PATTERN = Pattern.compile(
+            "(?i).*(" +
+                    "\\bor\\b|\\band\\b|\\bselect\\b|\\binsert\\b|\\bupdate\\b|" +
+                    "\\bdelete\\b|\\bdrop\\b|\\bunion\\b|\\bexec\\b|\\bwhere\\b|" +
+                    "--" +
+                    ").*"
+    );
+
 
     protected CourseUrl() {
         this.url = null;
@@ -25,8 +34,11 @@ public class CourseUrl implements ValueObject {
         matchesPattern(url, "^https://[A-Za-z0-9.\\-/_?=&:]{2,192}$",
                 "CourseUrl must start with https:// and contain only letters, digits, " +
                         "and the following special characters: . - / _ ? = & :");
+        isTrue(!SQL_INJECTION_PATTERN.matcher(url).matches(),
+                "CourseUrl contains illegal patterns");
         this.url = url;
     }
+
 
 
     @Override
