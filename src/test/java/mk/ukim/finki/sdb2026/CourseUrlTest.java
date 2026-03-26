@@ -3,6 +3,8 @@ package mk.ukim.finki.sdb2026;
 import mk.ukim.finki.sdb2026.model.valueObjects.CourseUrl;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.apache.commons.lang3.StringUtils.repeat;
 
 import java.util.stream.Stream;
 
@@ -26,4 +28,37 @@ public class CourseUrlTest {
                 )
         );
     }
+    @TestFactory
+    Stream<DynamicTest> shouldBeAcceptedBoundaryCases() {
+        return Stream.of(
+                "https://a.mk",
+                "https://x.io/y",
+                "https://finki.mk/c?id=1&lang=en",
+                "https://a.b/c_d",
+                "https://finki.ukim.mk/" + repeat("a", 170)
+        ).map(url ->
+                dynamicTest("CourseUrl: " + url,
+                        () -> assertDoesNotThrow(() -> new CourseUrl(url))
+                )
+        );
+    }
+
+    @TestFactory
+    Stream<DynamicTest> shouldNotBeAcceptedBoundaryCases() {
+        return Stream.of(
+                "https://a",
+                "https://" + repeat("x", 193),
+                "http://finki.mk/course",
+                "https://finki.mk/course page",
+                "https://finki.mk/<script>"
+        ).map(url ->
+                dynamicTest("CourseUrl: " + url,
+                        () -> assertThrows(
+                                IllegalArgumentException.class,
+                                () -> new CourseUrl(url)
+                        )
+                )
+        );
+    }
+
 }
